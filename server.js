@@ -14,6 +14,13 @@ function log(req, res, next) {
 }
 app.use(log);
 
+app.post('/login', async (req, res) => {
+    try {
+ 
+      res.json("worked");
+    } catch (error) {
+    }
+  });
 
 //Endpoints
 app.get("/profs", function (req, res) {
