@@ -8,19 +8,6 @@ const ldap = require('ldapjs');
 const tls = require('tls');
 
 
-const tlsOptions = {
-  // Set minimum and maximum TLS version
-  //rejectUnauthorized: false
-
-};
-
-// const ldapClient = ldap.createClient({
-//   // url: 'ldaps://ldap.forumsys.com', // Use the LDAP server URL provided by your university
-//   // Other options like TLS/SSL settings can be added here
-//   //tlsOptions: tlsOptions
-
-// });
-
 //Middleware
 app.use(express.json()); //for parsing application/json
 app.use(cors()); //for configuring Cross-Origin Resource Sharing (CORS)
@@ -30,25 +17,42 @@ function log(req, res, next) {
 }
 app.use(log);
 
-// app.post('/login2', (req, res) => {
-//   const { username, password } = req.body;
+const ldapClient = ldap.createClient({
+  url: 'ldap://ldap.forumsys.com',
+});
 
-//   // Construct the user's DN. The exact format can vary based on your LDAP server setup.
-//   const userDN = `uid=${username},ou=mathematicians,dc=example,dc=com`;
+ldapClient.on('error', (err) => {
+  console.error('LDAP client error:', err);
+});
 
-//   ldapClient.bind(userDN, password, (err) => {
-//     if (err) {
-//       // Authentication failed
-//       res.status(401).send('Authentication failed');
-//     } else {
-//       // Authentication successful
-//       // Here, you can create a session or token as per your application's requirement
-//       res.send('Authentication successful');
-//     }
-//   });
-// });
+app.post('/login2', (req, res) => {
+  const { username, password } = req.body;
+      //  username = "riemann";
+       // password = 'password';
+  // Construct the user's DN. The exact format can vary based on your LDAP server setup.
+  //const userDN = `uid=${username},ou=mathematicians,dc=example,dc=com`;
+
+  ldapClient.bind('cn=read-only-admin,dc=example,dc=com', 'password', (err) => {
+    if (err) {
+        // Authentication failed
+      console.log('Failed', err);
+
+      res.status(401).send('Authentication failed');
+    } else {
+      // Authentication successful
+        // Here, you can create a session or token as per your application's requirement
+            console.log("Success");
+
+      res.send('Authentication successful');
+    }
+  });
+});
+
+
+
 app.post('/login', async (req, res) => {
   try {
+            console.log("Login successfuly");
 
     res.json("worked");
   } catch (error) {
