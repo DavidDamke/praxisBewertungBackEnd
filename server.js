@@ -18,7 +18,7 @@ function log(req, res, next) {
 app.use(log);
 
 const ldapClient = ldap.createClient({
-  url: 'ldap://ldap.forumsys.com',
+  url: 'ldap://localhost:10389',
 });
 
 ldapClient.on('error', (err) => {
@@ -32,7 +32,7 @@ app.post('/login2', (req, res) => {
   // Construct the user's DN. The exact format can vary based on your LDAP server setup.
   //const userDN = `uid=${username},ou=mathematicians,dc=example,dc=com`;
 
-  ldapClient.bind('cn=read-only-admin,dc=example,dc=com', 'password', (err) => {
+  ldapClient.bind('cn=admin,dc=planetexpress,dc=com', 'GoodNewsEveryone', (err) => {
     if (err) {
         // Authentication failed
       console.log('Failed', err);
