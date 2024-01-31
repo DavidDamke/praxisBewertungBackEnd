@@ -5,7 +5,10 @@ const cors = require("cors");
 const port = 8080;
 const filename = __dirname + "/profs.json";
 const ldap = require('ldapjs');
+const ldapauth = require('./ldapAuth/LDAP');
+const mogodbFunctions = require('./mongoDb/mongoDbfunctions');
 const tls = require('tls');
+const { MongoClient } = require('mongodb');
 
 
 //Middleware
@@ -17,21 +20,27 @@ function log(req, res, next) {
 }
 app.use(log);
 
-const ldapClient = ldap.createClient({
-  url: 'ldap://localhost:10389',
+
+
+app.get('/getAllCompanies', async (req, res) => {
+    try {
+        const documents = await mogodbFunctions.getAllDocuments();
+        res.json(documents);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('An error occurred while fetching data');
+    }
 });
 
-ldapClient.on('error', (err) => {
-  console.error('LDAP client error:', err);
-});
-
-app.post('/login2', (req, res) => {
+app.post('/login2', async(req, res) => {
   const { username, password } = req.body;
       //  username = "riemann";
        // password = 'password';
   // Construct the user's DN. The exact format can vary based on your LDAP server setup.
   //const userDN = `uid=${username},ou=mathematicians,dc=example,dc=com`;
-
+  const ldapClient = ldap.createClient({
+    url: 'ldap://localhost:10389',
+  });
   ldapClient.bind('cn=admin,dc=planetexpress,dc=com', 'GoodNewsEveryone', (err) => {
     if (err) {
         // Authentication failed
@@ -52,74 +61,20 @@ app.post('/login2', (req, res) => {
 
 app.post('/login', async (req, res) => {
   try {
+      const { username, password } = req.body;
+     await ldapauth(username, password);
+
+
             console.log("Login successfuly");
 
     res.json("worked");
   } catch (error) {
+                console.log("Login failed");
+
+            console.log(error);
+
   }
 });
-//Endpoints
-// app.get("/profs", function (req, res) {
-//     fs.readFile(filename, "utf8", function (err, data) {
-//         res.writeHead(200, {
-//             "Content-Type": "application/json",
-//         });
-//         res.end(data);
-//     });
-// });
 
-// app.get("/profs/:id", function (req, res) {
-//     fs.readFile(filename, "utf8", function (err, data) {
-//         const dataAsObject = JSON.parse(data)[req.params.id];
-//         res.writeHead(200, {
-//             "Content-Type": "application/json",
-//         });
-//         res.end(JSON.stringify(dataAsObject));
-//     });
-// });
-
-// app.put("/profs/:id", function (req, res) {
-//     fs.readFile(filename, "utf8", function (err, data) {
-//         let dataAsObject = JSON.parse(data);
-//         dataAsObject[req.params.id].name = req.body.name;
-//         dataAsObject[req.params.id].rating = req.body.rating;
-//         fs.writeFile(filename, JSON.stringify(dataAsObject), () => {
-//             res.writeHead(200, {
-//                 "Content-Type": "application/json",
-//             });
-//             res.end(JSON.stringify(dataAsObject));
-//         });
-//     });
-// });
-
-// app.delete("/profs/:id", function (req, res) {
-//     fs.readFile(filename, "utf8", function (err, data) {
-//         let dataAsObject = JSON.parse(data);
-//         dataAsObject.splice(req.params.id, 1);
-//         fs.writeFile(filename, JSON.stringify(dataAsObject), () => {
-//             res.writeHead(200, {
-//                 "Content-Type": "application/json",
-//             });
-//             res.end(JSON.stringify(dataAsObject));
-//         });
-//     });
-// });
-
-// app.post("/profs", function (req, res) {
-//     fs.readFile(filename, "utf8", function (err, data) {
-//         let dataAsObject = JSON.parse(data);
-//         dataAsObject.push({
-//             id: dataAsObject.length,
-//             name: req.body.name,
-//             rating: req.body.rating,
-//         });
-//         fs.writeFile(filename, JSON.stringify(dataAsObject), () => {
-//             res.writeHead(200, {
-//                 "Content-Type": "application/json",
-//             });
-//             res.end(JSON.stringify(dataAsObject));
-//         });
-//     });
-// });
 
 app.listen(port, () => console.log(`Server listening on port ${port}!`));
