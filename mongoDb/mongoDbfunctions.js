@@ -12,8 +12,8 @@ async function getAllDocuments() {
         await client.connect();
         const database = client.db(dbName);
         const collection = database.collection(collectionName);
-
-        const documents = await collection.find({}).toArray();
+        var query = { "name": "Company XYZ" };
+        const documents = await collection.find(query).toArray();
         return documents;
     } catch (error) {
         console.error('An error occurred:', error);
