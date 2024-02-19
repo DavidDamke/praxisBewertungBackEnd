@@ -32,6 +32,16 @@ app.get('/getAllCompanies', async (req, res) => {
     }
 });
 
+app.post('/addNewCompany', async(req, res) => {
+  const newCompany = req.body;
+  console.log(newCompany);
+   try {
+        await mogodbFunctions.addNewCompany(newCompany);
+    } catch (error) {
+        console.error(error);
+    }
+  });
+
 app.post('/login2', async(req, res) => {
   const { username, password } = req.body;
       //  username = "riemann";
