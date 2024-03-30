@@ -22,13 +22,29 @@ async function getAllDocuments() {
     }
 }
 async function addNewCompany(newCompany) {
-      const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
     try {
         await client.connect();
         const database = client.db(dbName);
         const collection = database.collection(collectionName);
-        await collection.insertOne(newCompany)
+        console.log("New Company",newCompany)
+        // Assume newCompany has a unique identifier, like companyName
+        const query = { _id: newCompany._id, name: newCompany.name};
+
+        // Update operation
+        const update = {
+            $push: {
+                ratings: newCompany.ratings[0],
+            },
+        };
+
+        // Upsert option
+        const options = { upsert: true };
+
+        const result = await collection.updateOne(query, update, options);
+        console.log(result);
+        return result;
     } catch (error) {
         console.error('An error occurred:', error);
         return [];
