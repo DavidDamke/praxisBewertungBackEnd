@@ -42,36 +42,9 @@ app.post('/addNewCompany', async(req, res) => {
     }
   });
 
-app.post('/login2', async(req, res) => {
-  const { username, password } = req.body;
-      //  username = "riemann";
-       // password = 'password';
-  // Construct the user's DN. The exact format can vary based on your LDAP server setup.
-  //const userDN = `uid=${username},ou=mathematicians,dc=example,dc=com`;
-  const ldapClient = ldap.createClient({
-    url: 'ldap://localhost:10389',
-  });
-  ldapClient.bind('cn=admin,dc=planetexpress,dc=com', 'GoodNewsEveryone', (err) => {
-    if (err) {
-        // Authentication failed
-      console.log('Failed', err);
-
-      res.status(401).send('Authentication failed');
-    } else {
-      // Authentication successful
-        // Here, you can create a session or token as per your application's requirement
-            console.log("Success");
-
-      res.send('Authentication successful');
-    }
-  });
-});
-
-
-
 app.post('/login', async (req, res) => {
   try {
-      const { username, password } = req.body;
+    const { username, password } = req.body; 
      await ldapauth(username, password);
 
 
