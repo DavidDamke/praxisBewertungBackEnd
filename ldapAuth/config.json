@@ -1,7 +1,7 @@
 {
     "ldap": {
         "url": "ldaps://hswgt-dc1.hs-weingarten.de:636",
-        "bindDN": "cn=%u,ou=Users,dc=hswgt,dc=hs-weingarten,dc=de",
-        "baseDN": "ou=Users,dc=hswgt,dc=hs-weingarten,dc=de"
+        "bindDN": "cn=%u,cn=Users,dc=hswgt,dc=hs-weingarten,dc=de",
+        "baseDN": "cn=Users,dc=hswgt,dc=hs-weingarten,dc=de"
     }
 }

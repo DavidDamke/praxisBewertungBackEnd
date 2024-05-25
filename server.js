@@ -1,9 +1,11 @@
 const express = require("express");
 const app = express();
-const fs = require("fs");
+const session = require('express-session');
+const bodyParser = require('body-parser');
+const crypto = require('crypto');
+
 const cors = require("cors");
 const port = 8080;
-const filename = __dirname + "/profs.json";
 const ldap = require('ldapjs');
 const ldapauth = require('./ldapAuth/LDAP');
 const mogodbFunctions = require('./mongoDb/mongoDbfunctions');
@@ -19,10 +21,27 @@ function log(req, res, next) {
     next();
 }
 app.use(log);
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
+const secretKey = crypto.randomBytes(64).toString('hex');
 
+app.use(session({
+  secret: secretKey, // Use the generated secret key here
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false } // Use true if using HTTPS
+}));
 
-app.get('/getAllCompanies', async (req, res) => {
+function isAuthenticated(req, res, next) {
+  if (req.session.user) {
+    next();
+  } else {
+    res.status(401).send({ message: 'Unauthorized' });
+  }
+}
+
+app.get('/getAllCompanies', isAuthenticated, async (req, res) => {
     try {
         const documents = await mogodbFunctions.getAllDocuments();
         res.json(documents);
@@ -32,7 +51,7 @@ app.get('/getAllCompanies', async (req, res) => {
     }
 });
 
-app.post('/addNewCompany', async(req, res) => {
+app.post('/addNewCompany', isAuthenticated,async (req, res) => {
   const newCompany = req.body;
   console.log(newCompany);
    try {
@@ -47,10 +66,10 @@ app.post('/login', async (req, res) => {
     const { username, password } = req.body; 
      await ldapauth(username, password);
 
+      req.session.user= username;
+      console.log("Login successfuly");
 
-            console.log("Login successfuly");
-
-    res.json("worked");
+    res.status(200).send( {message: "Login successfuly"});
   } catch (error) {
                 console.log("Login failed");
 
@@ -59,5 +78,13 @@ app.post('/login', async (req, res) => {
   }
 });
 
+app.post('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).send({ message: 'Logout failed' });
+    }
+    res.status(200).send({ message: 'Logout successful' });
+  });
+});
 
 app.listen(port, () => console.log(`Server listening on port ${port}!`));
