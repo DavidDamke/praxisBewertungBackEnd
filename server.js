@@ -41,7 +41,7 @@ function isAuthenticated(req, res, next) {
   }
 }
 
-app.get('/getAllCompanies', isAuthenticated, async (req, res) => {
+app.get('/getAllCompanies', async (req, res) => { //Hier isAuthenticated Methode noch anwenden
     try {
         const documents = await mogodbFunctions.getAllDocuments();
         res.json(documents);
@@ -51,7 +51,7 @@ app.get('/getAllCompanies', isAuthenticated, async (req, res) => {
     }
 });
 
-app.post('/addNewCompany', isAuthenticated,async (req, res) => {
+app.post('/addNewCompany',async (req, res) => {
   const newCompany = req.body;
   console.log(newCompany);
    try {
