@@ -61,6 +61,36 @@ app.post('/addNewCompany',async (req, res) => {
     }
   });
 
+  app.post('/addUser',async (req, res) => {
+    const user = req.body;
+    
+     try {
+          await mogodbFunctions.addUser(user);
+      } catch (error) {
+          console.error(error);
+      }
+    });
+  app.post('/getUser',async (req, res) => {
+    const username = req.body;
+    console.log(username);
+     try {
+      const documents =  await mogodbFunctions.getUser(username);
+      res.json(documents);
+      } catch (error) {
+          console.error(error);
+      }
+    });
+  app.post('/updateUser',async (req, res) => {
+    const user = req.body;
+    console.log(user);
+     try {
+      const documents =  await mogodbFunctions.updateUser(user);
+      res.json(documents);
+      } catch (error) {
+          console.error(error);
+      }
+    });
+
 app.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body; 
