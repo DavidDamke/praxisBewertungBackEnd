@@ -1,9 +1,17 @@
 const express = require("express");
 const app = express();
-const fs = require("fs");
+const session = require('express-session');
+const bodyParser = require('body-parser');
+const crypto = require('crypto');
+
 const cors = require("cors");
 const port = 8080;
-const filename = __dirname + "/profs.json";
+const ldap = require('ldapjs');
+const ldapauth = require('./ldapAuth/LDAP');
+const mogodbFunctions = require('./mongoDb/mongoDbfunctions');
+const tls = require('tls');
+const { MongoClient } = require('mongodb');
+
 
 //Middleware
 app.use(express.json()); //for parsing application/json
@@ -13,70 +21,100 @@ function log(req, res, next) {
     next();
 }
 app.use(log);
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
+const secretKey = crypto.randomBytes(64).toString('hex');
 
-//Endpoints
-app.get("/profs", function (req, res) {
-    fs.readFile(filename, "utf8", function (err, data) {
-        res.writeHead(200, {
-            "Content-Type": "application/json",
-        });
-        res.end(data);
-    });
+app.use(session({
+  secret: secretKey, // Use the generated secret key here
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false } // Use true if using HTTPS
+}));
+
+function isAuthenticated(req, res, next) {
+  if (req.session.user) {
+    next();
+  } else {
+    res.status(401).send({ message: 'Unauthorized' });
+  }
+}
+
+app.get('/getAllCompanies', async (req, res) => { //Hier isAuthenticated Methode noch anwenden
+    try {
+        const documents = await mogodbFunctions.getAllDocuments();
+        res.json(documents);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('An error occurred while fetching data');
+    }
 });
 
-app.get("/profs/:id", function (req, res) {
-    fs.readFile(filename, "utf8", function (err, data) {
-        const dataAsObject = JSON.parse(data)[req.params.id];
-        res.writeHead(200, {
-            "Content-Type": "application/json",
-        });
-        res.end(JSON.stringify(dataAsObject));
+app.post('/addNewCompany',async (req, res) => {
+  const newCompany = req.body;
+  console.log(newCompany);
+   try {
+        await mogodbFunctions.addNewCompany(newCompany);
+    } catch (error) {
+        console.error(error);
+    }
+  });
+
+  app.post('/addUser',async (req, res) => {
+    const user = req.body;
+    
+     try {
+          await mogodbFunctions.addUser(user);
+      } catch (error) {
+          console.error(error);
+      }
     });
+  app.post('/getUser',async (req, res) => {
+    const username = req.body;
+    console.log(username);
+     try {
+      const documents =  await mogodbFunctions.getUser(username);
+      res.json(documents);
+      } catch (error) {
+          console.error(error);
+      }
+    });
+  app.post('/updateUser',async (req, res) => {
+    const user = req.body;
+    console.log(user);
+     try {
+      const documents =  await mogodbFunctions.updateUser(user);
+      res.json(documents);
+      } catch (error) {
+          console.error(error);
+      }
+    });
+
+app.post('/login', async (req, res) => {
+  try {
+    const { username, password } = req.body; 
+     await ldapauth(username, password);
+
+      req.session.user= username;
+      console.log("Login successfuly");
+
+    res.status(200).send( {message: "Login successfuly"});
+  } catch (error) {
+                console.log("Login failed");
+
+            console.log(error);
+
+  }
 });
 
-app.put("/profs/:id", function (req, res) {
-    fs.readFile(filename, "utf8", function (err, data) {
-        let dataAsObject = JSON.parse(data);
-        dataAsObject[req.params.id].name = req.body.name;
-        dataAsObject[req.params.id].rating = req.body.rating;
-        fs.writeFile(filename, JSON.stringify(dataAsObject), () => {
-            res.writeHead(200, {
-                "Content-Type": "application/json",
-            });
-            res.end(JSON.stringify(dataAsObject));
-        });
-    });
-});
-
-app.delete("/profs/:id", function (req, res) {
-    fs.readFile(filename, "utf8", function (err, data) {
-        let dataAsObject = JSON.parse(data);
-        dataAsObject.splice(req.params.id, 1);
-        fs.writeFile(filename, JSON.stringify(dataAsObject), () => {
-            res.writeHead(200, {
-                "Content-Type": "application/json",
-            });
-            res.end(JSON.stringify(dataAsObject));
-        });
-    });
-});
-
-app.post("/profs", function (req, res) {
-    fs.readFile(filename, "utf8", function (err, data) {
-        let dataAsObject = JSON.parse(data);
-        dataAsObject.push({
-            id: dataAsObject.length,
-            name: req.body.name,
-            rating: req.body.rating,
-        });
-        fs.writeFile(filename, JSON.stringify(dataAsObject), () => {
-            res.writeHead(200, {
-                "Content-Type": "application/json",
-            });
-            res.end(JSON.stringify(dataAsObject));
-        });
-    });
+app.post('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).send({ message: 'Logout failed' });
+    }
+    res.status(200).send({ message: 'Logout successful' });
+  });
 });
 
 app.listen(port, () => console.log(`Server listening on port ${port}!`));
