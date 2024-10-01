@@ -13,9 +13,10 @@ const tls = require('tls');
 const { MongoClient } = require('mongodb');
 
 
-//Middleware
-app.use(express.json()); //for parsing application/json
-app.use(cors()); //for configuring Cross-Origin Resource Sharing (CORS)
+
+app.use(express.json()); 
+app.use(cors());
+
 function log(req, res, next) {
     console.log(req.method + " Request at" + req.url);
     next();
@@ -27,10 +28,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 const secretKey = crypto.randomBytes(64).toString('hex');
 
 app.use(session({
-  secret: secretKey, // Use the generated secret key here
+  secret: secretKey, 
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: false } // Use true if using HTTPS
+  cookie: { secure: false } 
 }));
 
 function isAuthenticated(req, res, next) {
@@ -41,7 +42,7 @@ function isAuthenticated(req, res, next) {
   }
 }
 
-app.get('/getAllCompanies', async (req, res) => { //Hier isAuthenticated Methode noch anwenden
+app.get('/api/getAllCompanies', async (req, res) => { 
     try {
         const documents = await mogodbFunctions.getAllDocuments();
         res.json(documents);
@@ -51,9 +52,8 @@ app.get('/getAllCompanies', async (req, res) => { //Hier isAuthenticated Methode
     }
 });
 
-app.post('/addNewCompany',async (req, res) => {
+app.post('/api/addNewCompany',async (req, res) => {
   const newCompany = req.body;
-  console.log(newCompany);
    try {
         await mogodbFunctions.addNewCompany(newCompany);
     } catch (error) {
@@ -61,7 +61,7 @@ app.post('/addNewCompany',async (req, res) => {
     }
   });
 
-  app.post('/addUser',async (req, res) => {
+  app.post('/api/addUser',async (req, res) => {
     const user = req.body;
     
      try {
@@ -70,9 +70,8 @@ app.post('/addNewCompany',async (req, res) => {
           console.error(error);
       }
     });
-  app.post('/getUser',async (req, res) => {
+  app.post('/api/getUser',async (req, res) => {
     const username = req.body;
-    console.log(username);
      try {
       const documents =  await mogodbFunctions.getUser(username);
       res.json(documents);
@@ -80,9 +79,8 @@ app.post('/addNewCompany',async (req, res) => {
           console.error(error);
       }
     });
-  app.post('/updateUser',async (req, res) => {
+  app.post('/api/updateUser',async (req, res) => {
     const user = req.body;
-    console.log(user);
      try {
       const documents =  await mogodbFunctions.updateUser(user);
       res.json(documents);
@@ -91,24 +89,30 @@ app.post('/addNewCompany',async (req, res) => {
       }
     });
 
-app.post('/login', async (req, res) => {
+app.post('/api/login', async (req, res) => {
   try {
     const { username, password } = req.body; 
-     await ldapauth(username, password);
+    await ldapauth(username, password).catch();
+
 
       req.session.user= username;
       console.log("Login successfuly");
 
     res.status(200).send( {message: "Login successfuly"});
   } catch (error) {
-                console.log("Login failed");
-
-            console.log(error);
-
+    if (error.name === "InvalidCredentialsError"|| error.message === "Invalid Credentials") {
+      // Respond with 401 for authentication-related errors
+      console.log(error)
+      res.status(401).send({ message: "Invalid credentials" });
+    } else {
+      // For other types of errors, respond with a different status code
+      console.log("An unexpected error occurred:", error);
+      res.status(500).send({ message: "An unexpected error occurred. Please try again later." });
+    }
   }
 });
 
-app.post('/logout', (req, res) => {
+app.post('/api/logout', (req, res) => {
   req.session.destroy((err) => {
     if (err) {
       return res.status(500).send({ message: 'Logout failed' });

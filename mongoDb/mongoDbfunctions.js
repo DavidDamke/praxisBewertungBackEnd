@@ -30,6 +30,7 @@ async function addNewCompany(newCompany) {
         const database = client.db(dbName);
         const collection = database.collection(collectionName);
         console.log("New Company",newCompany)
+        
         // Assume newCompany has a unique identifier, like companyName
         const query = { _id: newCompany._id, name: newCompany.name};
 
@@ -60,13 +61,7 @@ async function addUser(user) {
         await client.connect();
         const database = client.db(dbName);
         const collection = database.collection(collectionUser);
-        console.log(user);
-        // Assume newCompany has a unique identifier, like companyName
-        //const query = { _id: user.name,  role:user.roll, anzahlBewertungen: user.anzahlBewertungen};
-
-        //const options = { upsert: true };
-
-
+        
         const result = await collection.insertOne(user);
 
         console.log(result);
